@@ -1,0 +1,39 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model ParkingLot {
+  id            String       @id @default(cuid())
+  parkingNumber Int          @default(0)
+  parkingSpace  ParkingSpace @default(SP)
+  vehicleType   VehicleType?
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+enum ParkingSpace {
+  SP // Small Space
+  MP // Medium Space
+  LP // Large Space
+}
+
+enum VehicleType {
+  S // Small
+  M // Medium
+  L // Large
+}
+
+model MallEntrance {
+  id        String   @id @default(cuid())
+  name      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
