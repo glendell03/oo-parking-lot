@@ -11,17 +11,20 @@ export const ParkingLotRouter = router({
 		return await ctx.prisma.$transaction(async t => {
 			const SP = await t.parkingLot.findMany({
 				orderBy: { parkingNumber: 'asc' },
-				where: { parkingSpace: 'SP' }
+				where: { parkingSpace: 'SP' },
+				include: { vehicle: true }
 			})
 
 			const MP = await t.parkingLot.findMany({
 				orderBy: { parkingNumber: 'asc' },
-				where: { parkingSpace: 'MP' }
+				where: { parkingSpace: 'MP' },
+				include: { vehicle: true }
 			})
 
 			const LP = await t.parkingLot.findMany({
 				orderBy: { parkingNumber: 'asc' },
-				where: { parkingSpace: 'LP' }
+				where: { parkingSpace: 'LP' },
+				include: { vehicle: true }
 			})
 
 			return [SP, MP, LP]
@@ -38,15 +41,14 @@ export const ParkingLotRouter = router({
 		)
 		.mutation(async ({ ctx, input }) => {
 			return await ctx.prisma.$transaction(async t => {
-				let nearestLot: Pick<ParkingLot, 'id'> | null = null
+				let nearestLot: ParkingLot | null = null
 
 				// If vehicle is small find the nearest parking lot
 				// Small vehicle can park in any space
 				if (input.vehicleType === 'S') {
 					const smallLot = await t.parkingLot.findFirst({
 						orderBy: { parkingNumber: 'asc' },
-						where: { vehicleId: null, parkingSpace: 'SP' },
-						select: { id: true }
+						where: { vehicleId: null, parkingSpace: 'SP' }
 					})
 
 					/**
@@ -58,15 +60,13 @@ export const ParkingLotRouter = router({
 					if (!smallLot) {
 						const mediumLot = await t.parkingLot.findFirst({
 							orderBy: { parkingNumber: 'asc' },
-							where: { vehicleId: null, parkingSpace: 'MP' },
-							select: { id: true }
+							where: { vehicleId: null, parkingSpace: 'MP' }
 						})
 
 						if (!mediumLot) {
 							const largeLot = await t.parkingLot.findFirst({
 								orderBy: { parkingNumber: 'asc' },
-								where: { vehicleId: null, parkingSpace: 'LP' },
-								select: { id: true }
+								where: { vehicleId: null, parkingSpace: 'LP' }
 							})
 
 							if (largeLot) {
@@ -85,8 +85,7 @@ export const ParkingLotRouter = router({
 				if (input.vehicleType === 'M') {
 					const mediumLot = await t.parkingLot.findFirst({
 						orderBy: { parkingNumber: 'asc' },
-						where: { vehicleId: null, parkingSpace: 'MP' },
-						select: { id: true }
+						where: { vehicleId: null, parkingSpace: 'MP' }
 					})
 
 					/**
@@ -97,8 +96,7 @@ export const ParkingLotRouter = router({
 					if (!mediumLot) {
 						const largeLot = await t.parkingLot.findFirst({
 							orderBy: { parkingNumber: 'asc' },
-							where: { vehicleId: null, parkingSpace: 'LP' },
-							select: { id: true }
+							where: { vehicleId: null, parkingSpace: 'LP' }
 						})
 
 						if (largeLot) {
@@ -114,8 +112,7 @@ export const ParkingLotRouter = router({
 				if (input.vehicleType === 'L') {
 					nearestLot = await t.parkingLot.findFirst({
 						orderBy: { parkingNumber: 'asc' },
-						where: { vehicleId: null, parkingSpace: 'LP' },
-						select: { id: true }
+						where: { vehicleId: null, parkingSpace: 'LP' }
 					})
 				}
 
@@ -143,19 +140,28 @@ export const ParkingLotRouter = router({
 					if (diffInHours > 1) {
 						vehicle = await t.vehicle.update({
 							where: { id: input.vehicleId },
-							data: { isPark: true }
+							data: { isPark: true, parkingSpace: nearestLot.parkingSpace }
 						})
 					} else {
 						// reset rate back to flat rate 40
 						vehicle = await t.vehicle.update({
 							where: { id: input.vehicleId },
-							data: { isPark: true, rate: 40 }
+							data: {
+								isPark: true,
+								rate: 40,
+								createdAt: new Date(),
+								parkingSpace: nearestLot.parkingSpace
+							}
 						})
 					}
 				} else {
 					// Create a vehicle and park it on the nearest parking lot
 					vehicle = await t.vehicle.create({
-						data: { vehicleType: input.vehicleType, isPark: true }
+						data: {
+							vehicleType: input.vehicleType,
+							isPark: true,
+							parkingSpace: nearestLot.parkingSpace
+						}
 					})
 				}
 
@@ -176,7 +182,7 @@ export const ParkingLotRouter = router({
 					include: { ParkingLot: true }
 				})
 				const enteredAt = dayjs(vehicle?.createdAt)
-				const leavedAt = dayjs()
+				const leavedAt = dayjs().add(6, 'hour')
 
 				// Round up regardless of the decimal part
 				// Parking fees are calculated using the rounding up method, e.g. 6.4 hours must be rounded to 7.
@@ -187,8 +193,20 @@ export const ParkingLotRouter = router({
 					const rate = FLATRATE
 					await t.vehicle.update({ where: { id: input.id }, data: { rate } })
 				} else if (diffInHours > 24) {
+					if (!vehicle?.ParkingLot?.parkingSpace)
+						throw new TRPCError({
+							code: 'BAD_REQUEST',
+							message: 'Parking space not found'
+						})
+
+					const chunks = Math.floor(diffInHours / 24)
+					const exceedingHour = diffInHours % 24
+
 					// Calculate rate for every 24 hours
-					const rate = 5000 * (diffInHours / 24)
+					const rate =
+						5000 * chunks +
+						exceedingHour * VEHICLERATE[vehicle?.ParkingLot?.parkingSpace]
+
 					await t.vehicle.update({ where: { id: input.id }, data: { rate } })
 				} else {
 					if (!vehicle?.ParkingLot?.parkingSpace)
@@ -217,7 +235,7 @@ export const ParkingLotRouter = router({
 					where: { id: input.id },
 					data: {
 						isPark: false,
-						leavedAt: dayjs().toDate()
+						leavedAt: leavedAt.toDate()
 					}
 				})
 			})

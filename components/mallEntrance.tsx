@@ -13,6 +13,18 @@ import {
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group'
 import { trpc } from '@/trpc/client'
 import { VehicleType } from '@prisma/client'
+import { Menu } from 'lucide-react'
+import {
+	Sheet,
+	SheetContent,
+	SheetFooter,
+	SheetHeader,
+	SheetTitle,
+	SheetTrigger
+} from './ui/sheet'
+import History from './history'
+import Spinner from './ui/spinner'
+import { ScrollArea } from './ui/scroll-area'
 
 const vehicles: Array<{ id: number; type: VehicleType; description: string }> =
 	[
@@ -32,9 +44,17 @@ const MallEntrance = () => {
 		}
 	})
 
+	// Fetch unparked vehicles
+	const { refetch: refetchVehicles } = trpc.vehicle.all.useQuery({
+		isPark: false
+	})
+
 	// Reset Parking Lot
 	const resetMutation = trpc.parkingLot.reset.useMutation({
-		onSettled: async () => await refetch()
+		onSettled: async () => {
+			await refetch()
+			await refetchVehicles()
+		}
 	})
 
 	// State for dialog
@@ -52,46 +72,70 @@ const MallEntrance = () => {
 	}
 
 	return (
-		<div className='flex gap-2'>
-			<Button onClick={handleReset}>
-				{resetMutation.isPending ? '...' : 'Reset'}
-			</Button>
+		<div className='flex justify-between'>
+			<div className='space-x-2'>
+				{/* Mall entrance modals  */}
+				{data?.map(e => (
+					<Dialog key={e.id} onOpenChange={setOpen} open={open}>
+						<DialogTrigger asChild>
+							<Button>{e.name}</Button>
+						</DialogTrigger>
+						<DialogContent>
+							<DialogHeader>
+								<DialogTitle>Select Vehicle Type</DialogTitle>
+								<div className='py-5'>
+									<RadioGroup
+										defaultValue='S'
+										value={vehicleType}
+										onValueChange={value =>
+											setVehicleType(value as VehicleType)
+										}>
+										{vehicles.map(v => (
+											<div key={v.id} className='flex items-center space-x-2'>
+												<RadioGroupItem
+													value={v.type}
+													id={`vehicle-${v.type}`}
+												/>
+												<Label htmlFor={`vehicle-${v.type}`}>
+													{v.type} - {v.description}
+												</Label>
+											</div>
+										))}
+									</RadioGroup>
+								</div>
 
-			{/* Mall entrance modals  */}
-			{data?.map(e => (
-				<Dialog key={e.id} onOpenChange={setOpen} open={open}>
-					<DialogTrigger asChild>
-						<Button>{e.name}</Button>
-					</DialogTrigger>
-					<DialogContent>
-						<DialogHeader>
-							<DialogTitle>Select Vehicle Type</DialogTitle>
-							<div className='py-5'>
-								<RadioGroup
-									defaultValue='S'
-									value={vehicleType}
-									onValueChange={value => setVehicleType(value as VehicleType)}>
-									{vehicles.map(v => (
-										<div key={v.id} className='flex items-center space-x-2'>
-											<RadioGroupItem value={v.type} id={`vehicle-${v.type}`} />
-											<Label htmlFor={`vehicle-${v.type}`}>
-												{v.type} - {v.description}
-											</Label>
-										</div>
-									))}
-								</RadioGroup>
-							</div>
+								<Button
+									className='min-w-full'
+									onClick={handlePark}
+									disabled={parkMutation.isPending}>
+									{parkMutation.isPending ? <Spinner>Parking</Spinner> : 'Park'}
+								</Button>
+							</DialogHeader>
+						</DialogContent>
+					</Dialog>
+				))}
+			</div>
 
-							<Button
-								className='min-w-full'
-								onClick={handlePark}
-								disabled={parkMutation.isPending}>
-								{parkMutation.isPending ? '...' : 'Park'}
-							</Button>
-						</DialogHeader>
-					</DialogContent>
-				</Dialog>
-			))}
+			<Sheet>
+				<SheetTrigger asChild>
+					<Button variant='outline' size='icon'>
+						<Menu size={16} />
+					</Button>
+				</SheetTrigger>
+				<SheetContent>
+					<SheetHeader>
+						<SheetTitle>History</SheetTitle>
+					</SheetHeader>
+					<SheetFooter>
+						<Button className='min-w-full my-3' onClick={handleReset}>
+							{resetMutation.isPending ? <Spinner>Resetting</Spinner> : 'Reset'}
+						</Button>
+					</SheetFooter>
+					<ScrollArea className='h-[90%]'>
+						<History />
+					</ScrollArea>
+				</SheetContent>
+			</Sheet>
 		</div>
 	)
 }

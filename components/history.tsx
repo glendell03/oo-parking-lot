@@ -7,11 +7,19 @@ import LocalizedFormat from 'dayjs/plugin/localizedFormat'
 import { Card, CardContent, CardFooter, CardHeader } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { VehicleType } from '@prisma/client'
+import { ParkingSpace, VehicleType } from '@prisma/client'
 import Spinner from '@/components/ui/spinner'
 import { Separator } from '@/components/ui/separator'
 import { VEHICLERATE } from '@/lib/constant'
+import { cn } from '@/lib/utils'
 dayjs.extend(LocalizedFormat)
+
+const php = new Intl.NumberFormat('en-US', {
+	style: 'currency',
+	currency: 'PHP',
+	minimumFractionDigits: 0,
+	maximumFractionDigits: 0
+})
 
 const hoursParked = (enteredDate: string, leavedDate: string | null) => {
 	const enteredAt = dayjs(enteredDate)
@@ -19,8 +27,34 @@ const hoursParked = (enteredDate: string, leavedDate: string | null) => {
 
 	// Round up regardless of the decimal part
 	// Parking fees are calculated using the rounding up method, e.g. 6.4 hours must be rounded to 7.
-	const diffInHours = Math.ceil(leavedAt.diff(enteredAt, 'minute') / 60)
+	const diffInMinutes = leavedAt.diff(enteredAt, 'minute') / 60
+	if (diffInMinutes < 1) return 0
+	const diffInHours = Math.ceil(diffInMinutes)
 	return diffInHours
+}
+
+const parkingSpaceRate = (
+	parkingSpace: ParkingSpace | null,
+	enteredAt: string,
+	leavedAt: string | null
+) => {
+	if (!parkingSpace) return
+
+	const diffInHours = hoursParked(enteredAt, leavedAt)
+	const chunks = Math.floor(diffInHours / 24)
+	const exceedingHour = diffInHours % 24
+
+	if (diffInHours - 3 <= 0) return null
+
+	if (diffInHours - 3 < 24) {
+		return `${php.format(VEHICLERATE[parkingSpace])} x ${diffInHours - 3}h`
+	}
+
+	return `(${php.format(
+		5000
+	)} x ${chunks}d) + (${exceedingHour}h x ${php.format(
+		VEHICLERATE[parkingSpace]
+	)})`
 }
 
 const History = () => {
@@ -44,11 +78,16 @@ const History = () => {
 	}
 
 	return (
-		<div>
+		<div className='flex flex-col gap-4'>
 			{data?.map(d => (
 				<Card key={d.id}>
 					<CardHeader>
-						<Badge className='justify-center'>
+						<Badge
+							className={cn('justify-center', {
+								'bg-green-400 hover:bg-green-500': d.vehicleType === 'S',
+								'bg-blue-400 hover:bg-blue-500': d.vehicleType === 'M',
+								'bg-orange-400 hover:bg-orange-500': d.vehicleType === 'L'
+							})}>
 							{d.vehicleType} - {d.id}
 						</Badge>
 					</CardHeader>
@@ -60,16 +99,18 @@ const History = () => {
 						<Separator className='my-2' />
 						<div>
 							<p className='font-bold'>Rate:</p>
-							<p>Flat Rate: PHP 40</p>
-							{hoursParked(d.createdAt, d.leavedAt) - 3 > 0 && (
-								<p>
-									Parking Space Rate: PHP {VEHICLERATE[d.parkingSpace ?? 'SP']}
-									{hoursParked(d.createdAt, d.leavedAt) - 3 > 0
-										? ` x ${hoursParked(d.createdAt, d.leavedAt) - 3}`
-										: ''}
-								</p>
+							{hoursParked(d.createdAt, d.leavedAt) < 24 && (
+								<p>Flat Rate: {php.format(40)}</p>
 							)}
-							<p>Total: PHP {d.rate}</p>
+							<p>
+								{parkingSpaceRate(d.parkingSpace, d.createdAt, d.leavedAt) &&
+									`Parking Space Rate: ${parkingSpaceRate(
+										d.parkingSpace,
+										d.createdAt,
+										d.leavedAt
+									)}`}
+							</p>
+							<p>Total: {php.format(d.rate)}</p>
 						</div>
 						<Separator className='my-2' />
 						<div>
