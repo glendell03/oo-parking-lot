@@ -14,7 +14,8 @@ model ParkingLot {
   id            String       @id @default(cuid())
   parkingNumber Int          @default(0)
   parkingSpace  ParkingSpace @default(SP)
-  vehicleType   VehicleType?
+  vehicle       Vehicle?     @relation(fields: [vehicleId], references: [id])
+  vehicleId     String?      @unique
   createdAt     DateTime     @default(now())
   updatedAt     DateTime     @updatedAt
 }
@@ -23,6 +24,16 @@ enum ParkingSpace {
   SP // Small Space
   MP // Medium Space
   LP // Large Space
+}
+
+model Vehicle {
+  id          String      @id @default(cuid())
+  vehicleType VehicleType @default(S)
+  ParkingLot  ParkingLot?
+  isPark      Boolean     @default(true) // state of the vehicle
+  leavedAt    DateTime? // the time the vehicle left the parking complex
+  createdAt   DateTime    @default(now()) // the time the vehicle entered the parking complex
+  updatedAt   DateTime    @updatedAt
 }
 
 enum VehicleType {

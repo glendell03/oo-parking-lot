@@ -7,30 +7,30 @@ const main = async () => {
 	// Initialize the parking lot
 	const parkingLots: ParkingLots[] = []
 
-	// Create a 30 small parking lots
-	for (let i = 1; i <= 30; i++) {
+	// Create a 5 small parking lots
+	for (let i = 1; i <= 5; i++) {
 		parkingLots.push({
-			vehicleType: null,
 			parkingSpace: 'SP',
-			parkingNumber: i
+			parkingNumber: i,
+			vehicleId: null
 		})
 	}
 
-	// Create a 30 medium parking lots
-	for (let i = 1; i <= 30; i++) {
+	// Create a 5 medium parking lots
+	for (let i = 1; i <= 5; i++) {
 		parkingLots.push({
-			vehicleType: null,
 			parkingSpace: 'MP',
-			parkingNumber: i
+			parkingNumber: i,
+			vehicleId: null
 		})
 	}
 
-	// Create a 30 large parking lots
-	for (let i = 1; i <= 30; i++) {
+	// Create a 5 large parking lots
+	for (let i = 1; i <= 5; i++) {
 		parkingLots.push({
-			vehicleType: null,
 			parkingSpace: 'LP',
-			parkingNumber: i
+			parkingNumber: i,
+			vehicleId: null
 		})
 	}
 
