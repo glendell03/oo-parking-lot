@@ -27,9 +27,8 @@ export const ParkingLotRouter = router({
 			return [SP, MP, LP]
 		})
 	}),
-	/**
-	 * Park a vehicle
-	 * */
+
+	//Park a vehicle
 	park: publicProcedure
 		.input(
 			z.object({
@@ -138,6 +137,8 @@ export const ParkingLotRouter = router({
 				})
 			})
 		}),
+
+	// Reset the parking lot
 	reset: publicProcedure.mutation(async ({ ctx }) => {
 		return await ctx.prisma.parkingLot.updateMany({
 			where: { NOT: { vehicleId: null } },
