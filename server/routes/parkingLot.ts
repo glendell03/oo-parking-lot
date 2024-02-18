@@ -1,6 +1,6 @@
 import { z } from 'zod'
 import { publicProcedure, router } from '../trpc'
-import { ParkingLot, VehicleType } from '@prisma/client'
+import { ParkingLot, Vehicle, VehicleType } from '@prisma/client'
 import { TRPCError } from '@trpc/server'
 
 export const ParkingLotRouter = router({
@@ -32,7 +32,8 @@ export const ParkingLotRouter = router({
 	park: publicProcedure
 		.input(
 			z.object({
-				vehicleType: z.nativeEnum(VehicleType)
+				vehicleType: z.nativeEnum(VehicleType),
+				vehicleId: z.string().cuid().optional()
 			})
 		)
 		.mutation(async ({ ctx, input }) => {
@@ -126,10 +127,18 @@ export const ParkingLotRouter = router({
 					})
 				}
 
-				// Create a vehicle and park it on the nearest parking lot
-				const vehicle = await t.vehicle.create({
-					data: { vehicleType: input.vehicleType, isPark: true }
-				})
+				let vehicle: Vehicle
+				if (input.vehicleId) {
+					vehicle = await t.vehicle.update({
+						where: { id: input.vehicleId },
+						data: { isPark: true }
+					})
+				} else {
+					// Create a vehicle and park it on the nearest parking lot
+					vehicle = await t.vehicle.create({
+						data: { vehicleType: input.vehicleType, isPark: true }
+					})
+				}
 
 				return await t.parkingLot.update({
 					where: { id: nearestLot?.id },
@@ -138,11 +147,34 @@ export const ParkingLotRouter = router({
 			})
 		}),
 
+	// Upark a vehicle
+	unPark: publicProcedure
+		.input(z.object({ id: z.string().cuid() }))
+		.mutation(async ({ ctx, input }) => {
+			return await ctx.prisma.$transaction(async t => {
+				await t.parkingLot.update({
+					where: { vehicleId: input.id },
+					data: { vehicleId: null }
+				})
+				await t.vehicle.update({
+					where: { id: input.id },
+					data: {
+						isPark: false,
+						leavedAt: new Date()
+					}
+				})
+			})
+		}),
+
 	// Reset the parking lot
 	reset: publicProcedure.mutation(async ({ ctx }) => {
-		return await ctx.prisma.parkingLot.updateMany({
-			where: { NOT: { vehicleId: null } },
-			data: { vehicleId: null }
+		return await ctx.prisma.$transaction(async t => {
+			await t.parkingLot.updateMany({
+				where: { NOT: { vehicleId: null } },
+				data: { vehicleId: null }
+			})
+
+			await t.vehicle.deleteMany()
 		})
 	})
 })
