@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Vehicle" ADD COLUMN     "rate" INTEGER NOT NULL DEFAULT 40;

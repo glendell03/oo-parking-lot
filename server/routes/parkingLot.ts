@@ -2,11 +2,11 @@ import { z } from 'zod'
 import { publicProcedure, router } from '../trpc'
 import { ParkingLot, Vehicle, VehicleType } from '@prisma/client'
 import { TRPCError } from '@trpc/server'
+import dayjs from 'dayjs'
+import { FLATRATE, VEHICLERATE } from '@/lib/constant'
 
 export const ParkingLotRouter = router({
-	/**
-	 * Get all parking lots and return a 2D array of objects
-	 * */
+	// Get all parking lots and return a 2D array of objects
 	all: publicProcedure.query(async ({ ctx }) => {
 		return await ctx.prisma.$transaction(async t => {
 			const SP = await t.parkingLot.findMany({
@@ -129,10 +129,29 @@ export const ParkingLotRouter = router({
 
 				let vehicle: Vehicle
 				if (input.vehicleId) {
-					vehicle = await t.vehicle.update({
-						where: { id: input.vehicleId },
-						data: { isPark: true }
+					const vehicleData = await t.vehicle.findUnique({
+						where: { id: input.vehicleId }
 					})
+					const threeHoursFromNow = dayjs().add(1, 'hour')
+					const leavedAt = dayjs(vehicleData?.leavedAt)
+
+					const diffInHours = Math.ceil(
+						threeHoursFromNow.diff(leavedAt, 'minute') / 60
+					)
+
+					// If vehicle return within 1 hour continuous rate must apply
+					if (diffInHours > 1) {
+						vehicle = await t.vehicle.update({
+							where: { id: input.vehicleId },
+							data: { isPark: true }
+						})
+					} else {
+						// reset rate back to flat rate 40
+						vehicle = await t.vehicle.update({
+							where: { id: input.vehicleId },
+							data: { isPark: true, rate: 40 }
+						})
+					}
 				} else {
 					// Create a vehicle and park it on the nearest parking lot
 					vehicle = await t.vehicle.create({
@@ -152,6 +171,44 @@ export const ParkingLotRouter = router({
 		.input(z.object({ id: z.string().cuid() }))
 		.mutation(async ({ ctx, input }) => {
 			return await ctx.prisma.$transaction(async t => {
+				const vehicle = await t.vehicle.findUnique({
+					where: { id: input.id },
+					include: { ParkingLot: true }
+				})
+				const enteredAt = dayjs(vehicle?.createdAt)
+				const leavedAt = dayjs()
+
+				// Round up regardless of the decimal part
+				// Parking fees are calculated using the rounding up method, e.g. 6.4 hours must be rounded to 7.
+				const diffInHours = Math.ceil(leavedAt.diff(enteredAt, 'minute') / 60)
+
+				// Flat 40 pesos rate if less than 3 hours
+				if (diffInHours < 3) {
+					const rate = FLATRATE
+					await t.vehicle.update({ where: { id: input.id }, data: { rate } })
+				} else if (diffInHours > 24) {
+					// Calculate rate for every 24 hours
+					const rate = 5000 * (diffInHours / 24)
+					await t.vehicle.update({ where: { id: input.id }, data: { rate } })
+				} else {
+					if (!vehicle?.ParkingLot?.parkingSpace)
+						throw new TRPCError({
+							code: 'BAD_REQUEST',
+							message: 'Parking space not found'
+						})
+
+					const exceedingHour = diffInHours - 3
+
+					// Calculate rate for every exceeding hour base on parking space
+					const rate =
+						FLATRATE +
+						exceedingHour * VEHICLERATE[vehicle?.ParkingLot?.parkingSpace]
+					await t.vehicle.update({
+						where: { id: input.id },
+						data: { rate, parkingSpace: vehicle?.ParkingLot?.parkingSpace }
+					})
+				}
+
 				await t.parkingLot.update({
 					where: { vehicleId: input.id },
 					data: { vehicleId: null }
@@ -160,7 +217,7 @@ export const ParkingLotRouter = router({
 					where: { id: input.id },
 					data: {
 						isPark: false,
-						leavedAt: new Date()
+						leavedAt: dayjs().toDate()
 					}
 				})
 			})

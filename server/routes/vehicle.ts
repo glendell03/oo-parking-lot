@@ -14,9 +14,12 @@ export const VehicleRouter = router({
 					orderBy: { leavedAt: 'desc' },
 					where: {
 						isPark: input.isPark
-					}
+					},
+					include: { ParkingLot: true }
 				})
 			}
-			return await ctx.prisma.vehicle.findMany()
+			return await ctx.prisma.vehicle.findMany({
+				include: { ParkingLot: true }
+			})
 		})
 })

@@ -46,7 +46,7 @@ const ParkingLots = () => {
 							{unparkMutation.isPending && loading === p.vehicleId ? (
 								<Spinner>Unparking</Spinner>
 							) : (
-								'Park'
+								'Unpark'
 							)}
 						</Button>
 					)}
@@ -64,7 +64,7 @@ const ParkingLots = () => {
 							{unparkMutation.isPending && loading === p.vehicleId ? (
 								<Spinner>Unparking</Spinner>
 							) : (
-								'Park'
+								'Unpark'
 							)}
 						</Button>
 					)}
@@ -82,7 +82,7 @@ const ParkingLots = () => {
 							{unparkMutation.isPending && loading === p.vehicleId ? (
 								<Spinner>Unparking</Spinner>
 							) : (
-								'Park'
+								'Unpark'
 							)}
 						</Button>
 					)}

@@ -27,13 +27,15 @@ enum ParkingSpace {
 }
 
 model Vehicle {
-  id          String      @id @default(cuid())
-  vehicleType VehicleType @default(S)
-  ParkingLot  ParkingLot?
-  isPark      Boolean     @default(true) // state of the vehicle
-  leavedAt    DateTime? // the time the vehicle left the parking complex
-  createdAt   DateTime    @default(now()) // the time the vehicle entered the parking complex
-  updatedAt   DateTime    @updatedAt
+  id           String        @id @default(cuid())
+  vehicleType  VehicleType   @default(S)
+  ParkingLot   ParkingLot?
+  parkingSpace ParkingSpace?
+  isPark       Boolean       @default(true) // state of the vehicle
+  rate         Int           @default(40)
+  leavedAt     DateTime? // the time the vehicle left the parking complex
+  createdAt    DateTime      @default(now()) // the time the vehicle entered the parking complex
+  updatedAt    DateTime      @updatedAt
 }
 
 enum VehicleType {
