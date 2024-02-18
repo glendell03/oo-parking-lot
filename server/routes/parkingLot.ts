@@ -182,7 +182,7 @@ export const ParkingLotRouter = router({
 					include: { ParkingLot: true }
 				})
 				const enteredAt = dayjs(vehicle?.createdAt)
-				const leavedAt = dayjs().add(6, 'hour')
+				const leavedAt = dayjs().add(2, 'day').add(5, 'hour')
 
 				// Round up regardless of the decimal part
 				// Parking fees are calculated using the rounding up method, e.g. 6.4 hours must be rounded to 7.

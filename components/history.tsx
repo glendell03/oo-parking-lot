@@ -93,6 +93,11 @@ const History = () => {
 					</CardHeader>
 					<CardContent>
 						<div className='flex'>
+							<p className='font-bold mr-2'>Parking Space:</p>
+							{d.parkingSpace}
+						</div>
+						<Separator className='my-2' />
+						<div className='flex'>
 							<p className='font-bold mr-2'>Hours Parked:</p>
 							{hoursParked(d.createdAt, d.leavedAt)}
 						</div>
