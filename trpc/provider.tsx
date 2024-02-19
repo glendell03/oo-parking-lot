@@ -6,9 +6,9 @@ import { httpBatchLink } from '@trpc/client'
 import { trpc } from './client'
 
 const getBaseUrl = () => {
-	if (process.env.VERCEL_URL)
+	if (process.env.NEXT_PUBLIC_VERCEL_URL)
 		// reference for vercel.com
-		return `https://${process.env.VERCEL_URL}/api/trpc`
+		return `https://${process.env.NEXT_PUBLIC_VERCEL_URL}/api/trpc`
 	// assume localhost
 	return `http://localhost:${process.env.PORT ?? 3000}/api/trpc`
 }
