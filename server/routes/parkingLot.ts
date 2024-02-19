@@ -129,11 +129,11 @@ export const ParkingLotRouter = router({
 					const vehicleData = await t.vehicle.findUnique({
 						where: { id: input.vehicleId }
 					})
-					const threeHoursFromNow = dayjs().add(1, 'hour')
+					const oneHourFromNow = dayjs().add(1, 'hour')
 					const leavedAt = dayjs(vehicleData?.leavedAt)
 
 					const diffInHours = Math.ceil(
-						threeHoursFromNow.diff(leavedAt, 'minute') / 60
+						oneHourFromNow.diff(leavedAt, 'minute') / 60
 					)
 
 					// If vehicle return within 1 hour continuous rate must apply
@@ -174,7 +174,14 @@ export const ParkingLotRouter = router({
 
 	// Upark a vehicle
 	unPark: publicProcedure
-		.input(z.object({ id: z.string().cuid() }))
+		.input(
+			z.object({
+				id: z.string().cuid(),
+				day: z.number().optional(),
+				hour: z.number().optional(),
+				minute: z.number().optional()
+			})
+		)
 		.mutation(async ({ ctx, input }) => {
 			return await ctx.prisma.$transaction(async t => {
 				const vehicle = await t.vehicle.findUnique({
@@ -182,7 +189,13 @@ export const ParkingLotRouter = router({
 					include: { ParkingLot: true }
 				})
 				const enteredAt = dayjs(vehicle?.createdAt)
-				const leavedAt = dayjs().add(2, 'day').add(5, 'hour')
+				const leavedAt =
+					input.day || input.hour || input.minute
+						? dayjs(vehicle?.leavedAt || vehicle?.createdAt)
+								.add(input.day ?? 0, 'day')
+								.add(input.hour ?? 0, 'hour')
+								.add(input.minute ?? 0, 'minute')
+						: dayjs(vehicle?.leavedAt || vehicle?.createdAt)
 
 				// Round up regardless of the decimal part
 				// Parking fees are calculated using the rounding up method, e.g. 6.4 hours must be rounded to 7.
@@ -192,7 +205,7 @@ export const ParkingLotRouter = router({
 				if (diffInHours < 3) {
 					const rate = FLATRATE
 					await t.vehicle.update({ where: { id: input.id }, data: { rate } })
-				} else if (diffInHours > 24) {
+				} else if (diffInHours >= 24) {
 					if (!vehicle?.ParkingLot?.parkingSpace)
 						throw new TRPCError({
 							code: 'BAD_REQUEST',

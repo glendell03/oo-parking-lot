@@ -50,11 +50,11 @@ const parkingSpaceRate = (
 		return `${php.format(VEHICLERATE[parkingSpace])} x ${diffInHours - 3}h`
 	}
 
-	return `(${php.format(
-		5000
-	)} x ${chunks}d) + (${exceedingHour}h x ${php.format(
-		VEHICLERATE[parkingSpace]
-	)})`
+	if (diffInHours >= 24) {
+		return `(${php.format(5000)} x ${chunks}d) + (${php.format(
+			VEHICLERATE[parkingSpace]
+		)} x ${exceedingHour}h)`
+	}
 }
 
 const History = () => {

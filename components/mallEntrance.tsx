@@ -25,6 +25,7 @@ import {
 import History from './history'
 import Spinner from './ui/spinner'
 import { ScrollArea } from './ui/scroll-area'
+import { Skeleton } from './ui/skeleton'
 
 const vehicles: Array<{ id: number; type: VehicleType; description: string }> =
 	[
@@ -36,7 +37,7 @@ const vehicles: Array<{ id: number; type: VehicleType; description: string }> =
 const MallEntrance = () => {
 	const { refetch } = trpc.parkingLot.all.useQuery()
 	// Fetch Mall Entrance
-	const { data } = trpc.mallEntrance.all.useQuery()
+	const { data, isPending } = trpc.mallEntrance.all.useQuery()
 	const parkMutation = trpc.parkingLot.park.useMutation({
 		onSettled: async () => {
 			await refetch()
@@ -70,6 +71,8 @@ const MallEntrance = () => {
 	const handleReset = () => {
 		resetMutation.mutate()
 	}
+
+	if (isPending) return <Skeleton className='w-full h-10' />
 
 	return (
 		<div className='flex justify-between'>
