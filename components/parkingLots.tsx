@@ -97,7 +97,10 @@ const ParkingLot = ({
 		TParkingLot & { vehicle: WithDatesStringified<Vehicle> | null }
 	>
 }) => {
+	// State for unpark modal
 	const [open, setOpen] = useState(false)
+
+	// Loading state for unpark button
 	const [loading, setLoading] = useState<string | null>(null)
 
 	// Fetch parking lots

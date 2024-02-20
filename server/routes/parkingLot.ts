@@ -135,8 +135,6 @@ export const ParkingLotRouter = router({
 
 					const diffInHours = now.diff(leavedAt, 'minute') / 60
 
-					console.log('park', { diffInHours })
-
 					// If vehicle return within 1 hour continuous rate must apply
 					if (diffInHours < 1) {
 						vehicle = await t.vehicle.update({
@@ -189,6 +187,7 @@ export const ParkingLotRouter = router({
 					where: { id: input.id },
 					include: { ParkingLot: true }
 				})
+
 				const enteredAt = dayjs(vehicle?.createdAt)
 					.subtract(input.day ?? 0, 'day')
 					.subtract(input.hour ?? 0, 'hour')

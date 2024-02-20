@@ -35,9 +35,11 @@ const vehicles: Array<{ id: number; type: VehicleType; description: string }> =
 	]
 
 const MallEntrance = () => {
+	// Fetch Parking Lot
 	const { refetch } = trpc.parkingLot.all.useQuery()
 	// Fetch Mall Entrance
 	const { data, isPending } = trpc.mallEntrance.all.useQuery()
+
 	const parkMutation = trpc.parkingLot.park.useMutation({
 		onSettled: async () => {
 			await refetch()

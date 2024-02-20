@@ -14,6 +14,7 @@ import { VEHICLERATE } from '@/lib/constant'
 import { cn } from '@/lib/utils'
 dayjs.extend(LocalizedFormat)
 
+// Convert integer to a currency format
 const php = new Intl.NumberFormat('en-US', {
 	style: 'currency',
 	currency: 'PHP',
@@ -21,6 +22,7 @@ const php = new Intl.NumberFormat('en-US', {
 	maximumFractionDigits: 0
 })
 
+// Calculate number of hours that vehicle was parked
 const hoursParked = (enteredDate: string, leavedDate: string | null) => {
 	const enteredAt = dayjs(enteredDate)
 	const leavedAt = dayjs(leavedDate)
@@ -33,6 +35,7 @@ const hoursParked = (enteredDate: string, leavedDate: string | null) => {
 	return diffInHours
 }
 
+// Calculate parking rate based on the hours and vehicle type
 const parkingSpaceRate = (
 	parkingSpace: ParkingSpace | null,
 	enteredAt: string,
@@ -58,8 +61,11 @@ const parkingSpaceRate = (
 }
 
 const History = () => {
+	// Fetch parking lot
 	const { refetch: refetchParkingLot } = trpc.parkingLot.all.useQuery()
+	// Fetch vehicle
 	const { data, refetch } = trpc.vehicle.all.useQuery({ isPark: false })
+
 	const vehicleMutation = trpc.parkingLot.park.useMutation({
 		onSettled: async () => {
 			await refetch()
@@ -67,6 +73,7 @@ const History = () => {
 		}
 	})
 
+	// Loading state for individual park button
 	const [loading, setLoading] = useState<string | null>(null)
 
 	const handlePark = ({
