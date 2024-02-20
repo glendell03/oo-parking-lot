@@ -129,15 +129,16 @@ export const ParkingLotRouter = router({
 					const vehicleData = await t.vehicle.findUnique({
 						where: { id: input.vehicleId }
 					})
-					const oneHourFromNow = dayjs().add(1, 'hour')
+					// const oneHourFromLeave = dayjs(vehicleData?.leavedAt).add(1, 'hour')
+					const now = dayjs()
 					const leavedAt = dayjs(vehicleData?.leavedAt)
 
-					const diffInHours = Math.ceil(
-						oneHourFromNow.diff(leavedAt, 'minute') / 60
-					)
+					const diffInHours = now.diff(leavedAt, 'minute') / 60
+
+					console.log('park', { diffInHours })
 
 					// If vehicle return within 1 hour continuous rate must apply
-					if (diffInHours > 1) {
+					if (diffInHours < 1) {
 						vehicle = await t.vehicle.update({
 							where: { id: input.vehicleId },
 							data: { isPark: true, parkingSpace: nearestLot.parkingSpace }
@@ -189,13 +190,10 @@ export const ParkingLotRouter = router({
 					include: { ParkingLot: true }
 				})
 				const enteredAt = dayjs(vehicle?.createdAt)
-				const leavedAt =
-					input.day || input.hour || input.minute
-						? dayjs(vehicle?.leavedAt || vehicle?.createdAt)
-								.add(input.day ?? 0, 'day')
-								.add(input.hour ?? 0, 'hour')
-								.add(input.minute ?? 0, 'minute')
-						: dayjs(vehicle?.leavedAt || vehicle?.createdAt)
+					.subtract(input.day ?? 0, 'day')
+					.subtract(input.hour ?? 0, 'hour')
+					.subtract(input.minute ?? 0, 'minute')
+				const leavedAt = dayjs()
 
 				// Round up regardless of the decimal part
 				// Parking fees are calculated using the rounding up method, e.g. 6.4 hours must be rounded to 7.
@@ -247,6 +245,7 @@ export const ParkingLotRouter = router({
 				await t.vehicle.update({
 					where: { id: input.id },
 					data: {
+						createdAt: enteredAt.toDate(),
 						isPark: false,
 						leavedAt: leavedAt.toDate()
 					}
