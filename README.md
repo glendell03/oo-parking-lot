@@ -3,10 +3,18 @@
 [OO Parking Lot](https://oo-parking-lot-7b4o.vercel.app/)
 <img width="1902" alt="image" src="https://github.com/glendell03/oo-parking-lot/assets/58845052/bbfe531a-b84c-47f6-9ff0-274c01d708ce">
 
+## Overview
+For this technical assessment, I chose to create a full-stack web application, as I believe that this approach would best showcase my programming and problem-solving skills, and it aligns with the real-world application of solving practical problems.
 
-## Tech Stack
+The application provides a visual representation of a parking lot, allowing users to view and manage parking spaces, entrances, and exits. It is designed to be user-friendly, with intuitive controls and clear visual feedback.
+
+I selected a tech stack that I am comfortable with and that I believe is well-suited to the requirements of the project. 
+
+The stack includes:
+
+- Node.JS
 - Typescript
-- Next.JS
+- Next.JS (React)
 - TRPC
 - PrismaORM
 - PostgreSQL
