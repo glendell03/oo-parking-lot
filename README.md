@@ -1,36 +1,62 @@
-This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# OO Parking Lot
+## Demo
+[OO Parking Lot](https://oo-parking-lot-7b4o.vercel.app/)
+<img width="1902" alt="image" src="https://github.com/glendell03/oo-parking-lot/assets/58845052/bbfe531a-b84c-47f6-9ff0-274c01d708ce">
 
-## Getting Started
 
-First, run the development server:
+## Tech Stack
+- Typescript
+- Next.JS
+- TRPC
+- PrismaORM
+- PostgreSQL
+- TailwindCss
+- Shadcn/ui
+- zod
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Setup
+1. Clone the repo
+```console
+  git clone git@github.com:glendell03/oo-parking-lot.git
+```
+2. Change directory to oo-parking-lot
+```console
+  cd oo-parking-lot
+```
+3. Create database
+```sql
+CREATE DATABASE oo_parking_lot;
+```
+4. Edit .env
+```env
+DATABASE_URL="postgresql://[user]:[password]@localhost:5432/[databasename]?schema=public"
+```
+5. Install dependencies
+```console
+  pnpm i
+```
+6. Run prisma migration
+```console
+  pnpm prisma migrate dev
+```
+7. Run prisma generate
+```console
+  pnpm prisma generate
+```
+8. Run prisma db seed
+```console
+  pnpm prisma db seed ./prisma/seeds/parkingLot.ts
+  pnpm prisma db seed ./prisma/seeds/mallEntrance.ts 
+```
+9. Run local server
+```console
+  pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Visual Representation
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/basic-features/font-optimization) to automatically optimize and load Inter, a custom Google Font.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="https://github.com/glendell03/oo-parking-lot/assets/58845052/5d03688a-023f-430b-aa56-5a3613903cfd">
+  <source media="(prefers-color-scheme: light)" srcset="https://github.com/glendell03/oo-parking-lot/assets/58845052/2f1d57d1-131e-44aa-86c2-df115d13c53e">
+  <img alt="oo parking lot diagram" src="https://github.com/glendell03/oo-parking-lot/assets/58845052/2f1d57d1-131e-44aa-86c2-df115d13c53e">
+</picture>
