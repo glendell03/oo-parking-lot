@@ -30,6 +30,7 @@ CREATE DATABASE oo_parking_lot;
 4. Create .env.local
 ```env
 NODE_ENV="development"
+
 DATABASE_URL="postgresql://[user]:[password]@localhost:5432/[databasename]?schema=public"
 ```
 5. Install dependencies
